@@ -1,0 +1,71 @@
+# =============================================================================
+# Configuración de ejemplo. Cópiala a config/config.yaml (ignorado por git)
+# y rellena los valores de tu entorno. NUNCA subas credenciales al repo.
+# =============================================================================
+
+# "local" -> ficheros (parquet/csv) | "snowflake" -> Snowpark
+mode: local
+
+# ── Modo local ───────────────────────────────────────────────────────────────
+local_data_path: data/sessions.parquet
+local_artifacts_dir: artifacts
+local_output_path: data/scoring.csv
+reports_dir: reports
+
+# ── Modo Snowflake ───────────────────────────────────────────────────────────
+# Conexión definida en ~/.snowflake/connections.toml (fuera del repo)
+snowflake_connection_name: my_connection
+database: MY_DB
+schema: MY_SCHEMA
+source_table: SESSIONS_VIEW          # vista/tabla con una fila por sesión de juego
+scoring_table: CHURN_SCORING_MENSUAL
+stage: CHURN_ARTIFACTS
+artifact_name: churn_artifacts.joblib
+
+# Mapeo nombre interno -> columna en tu fuente (solo las que cambien)
+source_columns:
+  cliente_id: CUSTOMER_ID
+  monetary: SEGMENT
+  pais: COUNTRY
+  idcentro: VENUE_ID
+  centro: VENUE_NAME
+  anio_mes: YEAR_MONTH
+  fecha_sesion: SESSION_DATE
+  meses_juego_total: MONTHS_ACTIVE
+  visitas_total_historico: TOTAL_VISITS
+  vis_x_mes_historico: VISITS_PER_MONTH
+  primera_visita: FIRST_VISIT
+  dias_desde_ultima_visita: DAYS_SINCE_LAST_VISIT
+  dias_sin_visita_fin_mes: DAYS_WITHOUT_VISIT_EOM
+  rtp_ultimas3_sesiones: RTP_LAST3_SESSIONS
+  rtp_sesion_anterior: RTP_PREV_SESSION
+  win_teorico: THEORETICAL_WIN
+  win_real: ACTUAL_WIN
+  coin_in: COIN_IN
+  rtp: RTP
+
+# ── Definición de churn ──────────────────────────────────────────────────────
+churn_hard_days: 30        # sin visita en N días tras la última sesión del mes
+churn_soft_drop: 0.50      # caída relativa de sesiones vs media 3 meses
+churn_valor_drop: 0.50     # caída relativa de coin-in vs media 3 meses
+
+# ── Entrenamiento ────────────────────────────────────────────────────────────
+test_months: 3
+calib_months: 1
+seed: 42
+use_xgboost: true
+
+# ── Segmento VIP (modelo y umbral propios) ───────────────────────────────────
+vip_segments: [Platinum, Diamond]
+vip_excluded_features: [n_sesiones_mes, densidad_sesiones]
+vip_min_calib_rows: 30
+vip_fbeta: 0.5             # <1 prioriza precisión sobre recall
+vip_threshold: null        # null = automático (F-beta); o un valor fijo, p.ej. 0.85
+vip_threshold_default: 0.90
+
+# ── Umbrales de riesgo para el resto de clientes ─────────────────────────────
+std_threshold_high: 0.77
+threshold_medium: 0.45
+
+# ── Inferencia ───────────────────────────────────────────────────────────────
+inference_lookback_months: 5
